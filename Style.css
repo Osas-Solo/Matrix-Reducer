@@ -22,10 +22,15 @@
     -fx-text-fill: #000033;
 }
 
+#row-title {
+    -fx-pref-width: 120;
+}
+
 .text-field {
     -fx-text-fill: #000033;
     -fx-prompt-text-fill: rgba(0, 0, 41, 0.3);
 }
+
 
 .button {
     -fx-background-color: #000033;
@@ -41,10 +46,6 @@
 
 .button:pressed {
     -fx-background-color: #000044;
-}
-
-.text-field {
-    -fx-text-fill: #000033;
 }
 
 .choice-box {

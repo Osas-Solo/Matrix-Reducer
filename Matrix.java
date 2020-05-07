@@ -1,164 +1,56 @@
+import fractions.*;
 import javafx.scene.control.TextArea;
 
 public class Matrix {
 
-    int rowNumber;
-    int columnNumber;
-    double[][] elements;
+    Fraction[][] elements;
 
-    Matrix(int rowNumber, int columnNumber) {
-        this.rowNumber = rowNumber;
-        this.columnNumber = columnNumber;
-        this.elements = new double[rowNumber][columnNumber];
+    private final Fraction ZERO = new Fraction();
+    private final Fraction ONE = new Fraction(1);
+
+    public Matrix(int rowNumber, int columnNumber) {
+
+        this.elements = new Fraction[rowNumber][columnNumber];
+
     }  //  end of constructor
 
-    public void printMatrix() {
-        for (int i = 0; i < elements.length; i++) {
-            for (int j = 0; j < elements[i].length; j++) {
-                System.out.printf("%15.2f", elements[i][j]);
-            }
-            System.out.println();
-        }
-    }  //  end of printMatrix()
+    public void reduceRowMatrix(TextArea output) {
 
-    public void printMatrix(TextArea output) {
-        for (int i = 0; i < elements.length; i++) {
-            for (int j = 0; j < elements[i].length; j++) {
-                output.appendText(String.format("%15.2f", elements[i][j]));
-            }
-            output.appendText("\n");
-        }
-    }  //  end of printMatrix()
-
-    private static void interchangeRows(double[] row1, double[] row2) {
-        double[] temp = new double[row1.length];
-        for (int i = 0; i < row1.length; i++) {
-            temp[i] = row1[i];
-            row1[i] = row2[i];
-            row2[i] = temp[i];
-        }
-    }  //  end of interchangeRows()
-
-    private static void divideRowByPivot(double[] row) {
-
-        double pivot = 0;
-
-        //  find pivot
-        for (int i = 0; i < row.length; i++) {
-            if (row[i] != 0) {
-                pivot = row[i];
-                break;
-            }
-        }
-
-        //  divide by pivot
-        for (int i = 0; i < row.length; i++) {
-            if (row[i] != 0) {
-                row[i] /= pivot;
-            }
-        }
-
-    }  //  end of divideRowByPivot()
-
-    private static void addRows(double[] row1, double[] row2) {
-
-        double pivot = 0;
-
-        //  find pivot
-        for (int i = 0; i < row1.length; i++) {
-            if (row1[i] != 0) {
-                pivot = row2[i];
-                break;
-            }
-        }
-
-        pivot *= -1;
-
-        //  add rows
-        for (int i = 0; i < row2.length; i++) {
-            if (row1[i] != 0 || row2[i] != 0) {
-                row2[i] += (pivot * row1[i]);
-            }
-        }
-
-    }  //  end of addRows()
-
-    public void reduceMatrix() {
+        reduceMatrix(output);
 
         String operations;
 
-        //  go through each row
-        for (int i = 0; i < elements.length - 1; i++) {
+        //  go through rows in reverse
+        for (int i = elements.length - 1; i > 0; i--) {
+
             operations = "";
-            double pivot = 0;
-            int pivotColumn = 0;
-
-            //  find pivot
-            for (int j = 0; j < elements[i].length; j++) {
-                if (elements[i][j] != 0) {
-                    pivot = elements[i][j];
-                    pivotColumn = j;
-                    break;
-                }
-            }  //  end of for loop to find pivot
-
-            //  interchange rows where possible
-            if (pivot != 1) {
-                for (int j = i + 1; j < elements.length; j++) {
-                    for (int m = 0; m < pivotColumn; m++) {
-                        if (elements[j][m] != 0) {
-                            operations += "R" + (i + 1) + " <--> " + "R" + (j + 1) + "\n";
-                            interchangeRows(elements[i], elements[j]);
-                            break;
-                        }
-                    }  //  end of m for loop
-                }  //   end of j for loop
-            }  //  end of if to interchange rows
-
-            //  find pivot
-            for (int j = 0; j < elements[i].length; j++) {
-                if (elements[i][j] != 0) {
-                    pivot = elements[i][j];
-                    pivotColumn = j;
-                    break;
-                }
-            }  //  end of for loop to find pivot
-
-            //  divide row by pivot
-            if (pivot != 1) {
-                operations += "R" + (i + 1) + " / " + pivot + "\n";
-                divideRowByPivot(elements[i]);
-            }  //  end of if to divide rows
+            int pivotColumn = getPivotColumn(elements[i]);
 
             //  add rows
-            for (int j = i + 1; j < elements.length; j++) {
-                if (elements[j][pivotColumn] != 0) {
-                    operations += "R" + (j + 1) + " = R" + (j + 1) + " + " + (elements[j][pivotColumn] * -1) + "R" + (i + 1) + "\n";
+            for (int j = i - 1; j >= 0; j--) {
+
+                if (!elements[j][pivotColumn].equals(ZERO)) {
+
+                    try {
+                        operations += "R" + (j + 1) + " = R" + (j + 1) + " + "
+                                    + Fraction.multiplyFractions(elements[j][pivotColumn], new Fraction(-1))
+                                    + "R" + (i + 1) + "\n";
+                    } catch (DenominatorException e) {
+                        e.printStackTrace();
+                    }
+
                     addRows(elements[i], elements[j]);
-                }
+
+                }  //  end of if
+
             }  //  end of for loop to add rows
-            System.out.println("\n" + operations);
-            printMatrix();
+
+            output.appendText("\n" + operations);
+            output.appendText(this.toString());
 
         }  //  end of for loop to go through rows
 
-        //  reduce last row
-        double pivot = 0;
-        for (int i = 0; i < elements[elements.length - 1].length; i++) {
-            if (elements[elements.length - 1][i] != 0) {
-                pivot = elements[elements.length - 1][i];
-                break;
-            }
-        }
-        if (pivot != 1 && pivot != 0) {
-            operations = "";
-            operations += "R" + elements.length + " / " + pivot + "\n";
-            divideRowByPivot(elements[elements.length - 1]);
-            System.out.println("\n" + operations);
-            printMatrix();
-        }
-
-    }  //  end of reduceMatrix()
+    }  //  end of reduceRowMatrix()
 
     public void reduceMatrix(TextArea output) {
 
@@ -166,143 +58,200 @@ public class Matrix {
 
         //  go through each row
         for (int i = 0; i < elements.length - 1; i++) {
-            operations = "";
-            double pivot = 0;
-            int pivotColumn = 0;
 
-            //  find pivot
-            for (int j = 0; j < elements[i].length; j++) {
-                if (elements[i][j] != 0) {
-                    pivot = elements[i][j];
-                    pivotColumn = j;
-                    break;
-                }
-            }  //  end of for loop to find pivot
+            operations = "";
+
+            Fraction pivot = getPivot(elements[i]);
+            int pivotColumn = getPivotColumn(elements[i]);
 
             //  interchange rows where possible
-            if (pivot != 1) {
+            if (!pivot.equals(ONE)) {
+
                 for (int j = i + 1; j < elements.length; j++) {
-                    for (int m = 0; m < pivotColumn; m++) {
-                        if (elements[j][m] != 0) {
-                            operations += "R" + (i + 1) + " <--> " + "R" + (j + 1) + "\n";
-                            interchangeRows(elements[i], elements[j]);
-                            break;
-                        }
-                    }  //  end of m for loop
+
+                    if (elements[j][pivotColumn].equals(ONE) ||
+                        (getPivotColumn(elements[j]) < pivotColumn &&
+                        !getPivot(elements[j]).equals(ZERO))) {
+
+                        operations += "R" + (i + 1) + " <--> " + "R" + (j + 1) + "\n";
+                        interchangeRows(elements[i], elements[j]);
+                        output.appendText("\n" + operations);
+                        output.appendText(this.toString());
+                        break;
+
+                    }  //  end of if
+
                 }  //   end of j for loop
+
             }  //  end of if to interchange rows
 
-            //  find pivot
-            for (int j = 0; j < elements[i].length; j++) {
-                if (elements[i][j] != 0) {
-                    pivot = elements[i][j];
-                    pivotColumn = j;
-                    break;
-                }
-            }  //  end of for loop to find pivot
+            pivot = getPivot(elements[i]);
+            pivotColumn = getPivotColumn(elements[i]);
 
+            operations = "";
             //  divide row by pivot
-            if (pivot != 1) {
+            if (!pivot.equals(ONE)) {
+
                 operations += "R" + (i + 1) + " / " + pivot + "\n";
                 divideRowByPivot(elements[i]);
+                output.appendText("\n" + operations);
+                output.appendText(this.toString());
+
             }  //  end of if to divide rows
 
+            operations = "";
             //  add rows
             for (int j = i + 1; j < elements.length; j++) {
-                if (elements[j][pivotColumn] != 0) {
-                    operations += "R" + (j + 1) + " = R" + (j + 1) + " + " + (elements[j][pivotColumn] * -1) + "R" + (i + 1) + "\n";
+
+                if (!elements[j][pivotColumn].equals(ZERO)) {
+
+                    try {
+                        operations += "R" + (j + 1) + " = R" + (j + 1) + " + " +
+                                    Fraction.multiplyFractions(elements[j][pivotColumn], new Fraction(-1))
+                                    + "R" + (i + 1) + "\n";
+                    } catch (DenominatorException e) {
+                        e.printStackTrace();
+                    }
+
                     addRows(elements[i], elements[j]);
-                }
+
+                }  //  end of if
+
             }  //  end of for loop to add rows
+
             output.appendText("\n" + operations);
-            printMatrix(output);
+            output.appendText(this.toString());
 
         }  //  end of for loop to go through rows
 
         //  reduce last row
-        double pivot = 0;
-        for (int i = 0; i < elements[elements.length - 1].length; i++) {
-            if (elements[elements.length - 1][i] != 0) {
-                pivot = elements[elements.length - 1][i];
-                break;
-            }
-        }
-        if (pivot != 1 && pivot != 0) {
+        Fraction[] lastRow = elements[elements.length - 1];
+        Fraction pivot = getPivot(lastRow);
+
+        if (!pivot.equals(ONE) && !pivot.equals(ZERO)) {
+
             operations = "";
             operations += "R" + elements.length + " / " + pivot + "\n";
-            divideRowByPivot(elements[elements.length - 1]);
+            divideRowByPivot(lastRow);
             output.appendText("\n" + operations);
-            printMatrix(output);
-        }
+            output.appendText(this.toString());
+
+        }  //  end of if
 
     }  //  end of reduceMatrix()
 
-    public void reduceRowMatrix() {
 
-        reduceMatrix();
+    private void interchangeRows(Fraction[] row1, Fraction[] row2) {
 
-        String operations;
-        //  go through rows in reverse
-        for (int i = elements.length - 1; i > 0; i--) {
+        Fraction[] temporaryRow = new Fraction[row1.length];
 
-            operations = "";
-            int pivotColumn = 0;
+        for (int i = 0; i < row1.length; i++) {
 
-            //  find pivot
+            temporaryRow[i] = row1[i];
+            row1[i] = row2[i];
+            row2[i] = temporaryRow[i];
+
+        }  //  end of for
+
+    }  //  end of interchangeRows()
+
+    private void divideRowByPivot(Fraction[] row) {
+
+        final Fraction ZERO = new Fraction();
+        Fraction pivot = getPivot(row);
+
+        for (int i = 0; i < row.length; i++) {
+
+            if (Fraction.compareFractions(row[i], ZERO) != 0) {
+
+                try {
+                    row[i] = Fraction.divideFractions(row[i], pivot);
+                } catch (DenominatorException e) {
+                    e.printStackTrace();
+                }
+
+            }  //  end of if
+
+        }  //  end of for
+
+    }  //  end of divideRowByPivot()
+
+    private void addRows(Fraction[] currentRow, Fraction[] otherRow) {
+
+        Fraction pivot = otherRow[getPivotColumn(currentRow)];
+
+        pivot = Fraction.negateFraction(pivot);
+
+        for (int i = 0; i < otherRow.length; i++) {
+
+            if (!currentRow[i].equals(ZERO) || !otherRow[i].equals(ZERO)) {
+
+                try {
+                    otherRow[i] = Fraction.addFractions(otherRow[i], Fraction.multiplyFractions(pivot, currentRow[i]));
+                } catch (DenominatorException e) {
+                    e.printStackTrace();
+                }
+
+            }  //  end of if
+
+        }  //  end of for
+
+    }  //  end of addRows()
+
+    private Fraction getPivot(Fraction[] row) {
+
+        Fraction pivot = ZERO;
+
+        //  find pivot
+        for (Fraction currentElement: row) {
+
+            if (!currentElement.equals(ZERO)) {
+
+                pivot = currentElement;
+                break;
+
+            }  //  end of if
+
+        }  //  end of for to find pivot
+
+        return pivot;
+
+    }  //  end of getPivot()
+
+    private int getPivotColumn(Fraction[] row) {
+
+        int pivotColumn = -1;
+
+        //  find pivot
+        for (int j = 0; j < row.length; j++) {
+
+            if (!row[j].equals(ZERO)) {
+                pivotColumn = j;
+                break;
+            }
+
+        }  //  end of for loop to find pivot
+
+        return pivotColumn;
+
+    }
+
+    public String toString() {
+
+        String matrix = "";
+
+        for (int i = 0; i < elements.length; i++) {
+
             for (int j = 0; j < elements[i].length; j++) {
-                if (elements[i][j] != 0) {
-                    pivotColumn = j;
-                    break;
-                }
-            }  //  end of for loop to find pivot
+                matrix += String.format("%-20s", elements[i][j]);
+            }
 
-            //  add rows
-            for (int j = i - 1; j >= 0; j--) {
-                if (elements[j][pivotColumn] != 0) {
-                    operations += "R" + (j + 1) + " = R" + (j + 1) + " + " + (elements[j][pivotColumn] * -1) + "R" + (i + 1) + "\n";
-                    addRows(elements[i], elements[j]);
-                }
-            }  //  end of for loop to add rows
+            matrix += "\n";
 
-            System.out.println("\n" + operations);
-            printMatrix();
+        }
 
-        }  //  end of for loop to go through rows
+        return matrix;
 
-    }  //  end of reduceRowMatrix()
-
-    public void reduceRowMatrix(TextArea output) {
-
-        reduceMatrix(output);
-
-        String operations;
-        //  go through rows in reverse
-        for (int i = elements.length - 1; i > 0; i--) {
-
-            operations = "";
-            int pivotColumn = 0;
-
-            //  find pivot
-            for (int j = 0; j < elements[i].length; j++) {
-                if (elements[i][j] != 0) {
-                    pivotColumn = j;
-                    break;
-                }
-            }  //  end of for loop to find pivot
-
-            //  add rows
-            for (int j = i - 1; j >= 0; j--) {
-                if (elements[j][pivotColumn] != 0) {
-                    operations += "R" + (j + 1) + " = R" + (j + 1) + " + " + (elements[j][pivotColumn] * -1) + "R" + (i + 1) + "\n";
-                    addRows(elements[i], elements[j]);
-                }
-            }  //  end of for loop to add rows
-
-            output.appendText("\n" + operations);
-            printMatrix(output);
-
-        }  //  end of for loop to go through rows
-
-    }  //  end of reduceRowMatrix()
+    }  //  end of toString()
 
 }  //  end of class

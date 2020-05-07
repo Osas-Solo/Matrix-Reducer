@@ -1,3 +1,5 @@
+import fractions.DenominatorException;
+import fractions.Fraction;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -31,7 +33,7 @@ public class MatrixReducerApplication extends Application {
 
     TextArea resultDisplay;
 
-    Alert error;
+    Alert errorAlert;
 
     int rowNumber;
     int columnNumber;
@@ -44,6 +46,7 @@ public class MatrixReducerApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+
         //  initialise window
         window = primaryStage;
         windowContent = new BorderPane();
@@ -113,9 +116,9 @@ public class MatrixReducerApplication extends Application {
         window.show();
 
         //  error
-        error = new Alert(Alert.AlertType.ERROR);
-        error.setTitle("Input Error");
-        error.setHeaderText("");
+        errorAlert = new Alert(Alert.AlertType.ERROR);
+        errorAlert.setTitle("Input Error");
+        errorAlert.setHeaderText("");
 
         //  set style
         scene.getStylesheets().add("Style.css");
@@ -142,6 +145,7 @@ public class MatrixReducerApplication extends Application {
 
                     for (int i = 0; i < rowNumber; i++) {
                         rowNumberTitles[i] = new Label("Row " + (i + 1) + ":");
+                        rowNumberTitles[i].setId("row-title");
                         GridPane.setConstraints(rowNumberTitles[i], 0, i);
                         centreComponents.getChildren().add(rowNumberTitles[i]);
 
@@ -165,37 +169,43 @@ public class MatrixReducerApplication extends Application {
                 }  //  end of if to check valid row and column number
 
                 else {
-                    error.setContentText("Please enter valid integers (> 0)");
-                    error.showAndWait();
+                    errorAlert.setContentText("Please enter valid integers (> 0)");
+                    errorAlert.showAndWait();
                 }
 
             } catch (NumberFormatException e1) {
-                error.setContentText("Please enter valid integers (> 0)");
-                error.showAndWait();
+                errorAlert.setContentText("Please enter valid integers (> 0)");
+                errorAlert.showAndWait();
             }
         });
 
         reduceButton.setOnAction(e -> {
+
             resultDisplay.setText("");
+
             try {
+
                 getElements();
                 resultDisplay.appendText("Original matrix:\n");
-                matrix.printMatrix(resultDisplay);
+                resultDisplay.appendText(matrix.toString());
+
                 if (reductionTypeSelector.getValue().equals(options[0])) {
                     matrix.reduceMatrix(resultDisplay);
                     resultDisplay.appendText("Reduced matrix");
                 }
+
                 else if (reductionTypeSelector.getValue().equals(options[1])) {
                     matrix.reduceRowMatrix(resultDisplay);
                     resultDisplay.appendText("Row reduced matrix");
                 }
-            } catch (NumberFormatException e1) {
-                error.setContentText("Please enter valid numbers in every textfield");
-                error.showAndWait();
+
+            } catch (Exception e1) {
             }
+
         });
 
         resetButton.setOnAction(e -> {
+
             rowNumberInput.setText("");
             columnNumberInput.setText("");
             reductionTypeSelector.setValue(options[0]);
@@ -205,15 +215,22 @@ public class MatrixReducerApplication extends Application {
             proceedButton.setDisable(false);
 
             for (int i = 0; i < rowNumber; i++) {
+
                 centreComponents.getChildren().remove(rowNumberTitles[i]);
+
                 for (int j = 0; j < elementInputs[i].length; j++) {
+
                     centreComponents.getChildren().remove(elementInputs[i][j]);
+
                 }  //  end of inner for
+
             }  //  end of constraintInputs for loop
+
             centreComponents.setVisible(false);
             reduceButton.setVisible(false);
             resetButton.setVisible(false);
             resultDisplay.setText("");
+
         });
 
     }  //  end of start()
@@ -221,10 +238,35 @@ public class MatrixReducerApplication extends Application {
     private void getElements() {
 
         for (int i = 0; i < elementInputs.length; i++) {
+
             for (int j = 0; j < elementInputs[i].length; j++) {
-                matrix.elements[i][j] = Double.parseDouble(elementInputs[i][j].getText());
-            }
-        }
+
+                if (elementInputs[i][j].getText().isEmpty()) {
+
+                    matrix.elements[i][j] = new Fraction();
+
+                } else {
+
+                    try {
+                        matrix.elements[i][j] = Fraction.convertToFraction(elementInputs[i][j].getText());
+                    } catch (DenominatorException e1) {
+                        errorAlert.setContentText("A fraction cannot have 0 as a denominator.\n" +
+                                "Please enter a valid fraction");
+                        errorAlert.showAndWait();
+                    } catch (Exception e1) {
+                        errorAlert.setContentText("Please enter fractions in any of the forms\n" +
+                                "\"a\", \"b/c\" or \"a b/c\".\n" +
+                                "You can also enter a whole number.\n" +
+                                "Ensure that only 1 space is typed between a whole number\n" +
+                                "and a fraction when entering a mixed fraction.");
+                        errorAlert.showAndWait();
+                    }  //  end of catch
+
+                }  //  end of else
+
+            }  //  end of for j
+
+        }  //  end of for i
 
     }  //  end of getElements()
 
